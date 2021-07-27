@@ -9,3 +9,73 @@ description: This is just another page
 _yay_
 
 [back](./)
+
+
+<style>
+* {
+  font-family: monospace;
+}  
+textarea {
+  width:100%;
+  height:90px;
+}
+iframe {
+  border: 1px solid;
+  width: 100%;
+  height: 200px;
+}
+</style>
+<script src=./dompurify-2.0.1.js nonce=abcd></script>
+
+<textarea autofocus oninput=debouncedProcess() id=input></textarea><br>
+Length of the solution URL: <span id=len></span><br>
+<iframe sandbox="allow-scripts allow-modals" id=ifr></iframe>
+<script nonce=abcd>
+  const input = document.getElementById('input');
+  const iframe = document.getElementById('ifr');
+  const mainUrl = location.href.split('?')[0];
+  
+  // from: https://stackoverflow.com/a/24004942
+  function debounce(func, wait, immediate) {
+    var timeout;
+
+    return function() {
+      var context = this,
+        args = arguments;
+
+      var callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(function() {
+
+      timeout = null;
+
+      if (!immediate) {
+          func.apply(context, args);
+        }
+      }, wait);
+
+      if (callNow) func.apply(context, args);
+    }
+  }
+  
+  function process() {
+    const sanitized = input.value;
+    history.replaceState(null, null, mainUrl + '?xss='+mainUrl + encodeURIComponent(input.value));
+    
+    const html = `
+<h1>Homepage!</h1>
+    <p>Welcome to my homepage! Here are some info about me:</p>
+    ${sanitized}
+    <script nonce=xyz src="./main.js"><\/script>
+    `;
+    iframe.srcdoc=html;
+    len.textContent = location.href.length;
+  }
+  
+  input.value = new URL(location).searchParams.get('xss');
+  
+  window.debouncedProcess = debounce(process, 100);
+  debouncedProcess();
+
+
+</script>
